@@ -26,12 +26,12 @@ class _EmotionButtonState extends State<EmotionButton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.9,
+      end: 0.92,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
@@ -53,56 +53,48 @@ class _EmotionButtonState extends State<EmotionButton>
         widget.onTap();
       },
       onTapCancel: () => _controller.reverse(),
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutCubic,
-              width: 75,
-              height: 75,
-              decoration: BoxDecoration(
-                color: widget.isSelected
-                    ? emotionColor.withAlpha(40)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: widget.isSelected
-                      ? emotionColor
-                      : Colors.grey.withAlpha(50),
-                  width: widget.isSelected ? 3 : 1,
-                ),
-                boxShadow: widget.isSelected
-                    ? [
-                        BoxShadow(
-                          color: emotionColor.withAlpha(60),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(10),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-              ),
-              child: Center(
-                child: AnimatedScale(
-                  scale: widget.isSelected ? 1.2 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Text(
-                    widget.emoji,
-                    style: const TextStyle(fontSize: 36),
-                  ),
-                ),
-              ),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          width: 75,
+          height: 75,
+          decoration: BoxDecoration(
+            color: widget.isSelected
+                ? emotionColor.withAlpha(40)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: widget.isSelected
+                  ? emotionColor
+                  : Colors.grey.withAlpha(50),
+              width: widget.isSelected ? 3 : 1,
             ),
-          );
-        },
+            boxShadow: widget.isSelected
+                ? [
+                    BoxShadow(
+                      color: emotionColor.withAlpha(60),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Center(
+            child: AnimatedScale(
+              scale: widget.isSelected ? 1.2 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: Text(widget.emoji, style: const TextStyle(fontSize: 36)),
+            ),
+          ),
+        ),
       ),
     );
   }

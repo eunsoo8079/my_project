@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// MoodLog 앱의 디자인 시스템
 class AppColors {
@@ -46,34 +47,40 @@ class AppColors {
 }
 
 class AppTextStyles {
-  static const TextStyle headline1 = TextStyle(
+  // Gaegu 폰트 적용
+  static TextStyle get headline1 => GoogleFonts.gaegu(
     fontSize: 32,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
     letterSpacing: -0.5,
   );
 
-  static const TextStyle headline2 = TextStyle(
+  static TextStyle get headline2 => GoogleFonts.gaegu(
     fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle subtitle = TextStyle(
+  static TextStyle get subtitle => GoogleFonts.gaegu(
     fontSize: 16,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle body = TextStyle(
-    fontSize: 16,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get body =>
+      GoogleFonts.gaegu(fontSize: 16, color: AppColors.textPrimary);
 
-  static const TextStyle button = TextStyle(
+  static TextStyle get button => GoogleFonts.gaegu(
     fontSize: 18,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
+  );
+
+  // 숫자용 (더 가독성 좋은 폰트)
+  static TextStyle get number => GoogleFonts.gaegu(
+    fontSize: 28,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
   );
 }
 
@@ -100,5 +107,16 @@ class AppDecorations {
         offset: const Offset(0, 6),
       ),
     ],
+  );
+}
+
+/// 앱 전체 테마
+class AppTheme {
+  static ThemeData get lightTheme => ThemeData(
+    primarySwatch: Colors.blue,
+    useMaterial3: true,
+    textTheme: GoogleFonts.gaeguTextTheme(),
+    appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+    cardTheme: const CardThemeData(elevation: 2),
   );
 }

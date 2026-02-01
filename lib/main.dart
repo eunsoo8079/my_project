@@ -5,6 +5,7 @@ import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/record_screen.dart';
 import 'services/notification_service.dart';
+import 'theme/app_theme.dart';
 
 // 글로벌 네비게이터 키 (알림에서 화면 이동용)
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -50,12 +51,7 @@ class MyApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         title: 'MoodLog',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-          cardTheme: const CardThemeData(elevation: 2),
-        ),
+        theme: AppTheme.lightTheme,
         home: const HomeScreen(),
       ),
     );
