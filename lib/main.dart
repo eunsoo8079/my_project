@@ -12,20 +12,24 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 알림 서비스 초기화
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-  await notificationService.requestPermissions();
+  // 알림 서비스 초기화 (에러 발생해도 앱은 실행)
+  try {
+    final notificationService = NotificationService();
+    await notificationService.initialize();
+    await notificationService.requestPermissions();
 
-  // 알림 클릭 시 RecordScreen으로 이동
-  NotificationService.onNotificationTap = () {
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(builder: (context) => const RecordScreen()),
-    );
-  };
+    // 알림 클릭 시 RecordScreen으로 이동
+    NotificationService.onNotificationTap = () {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (context) => const RecordScreen()),
+      );
+    };
 
-  // 기본 알림 설정 (21:00)
-  await notificationService.scheduleDailyNotification(21, 0);
+    // 기본 알림 설정 (21:00)
+    await notificationService.scheduleDailyNotification(21, 0);
+  } catch (e) {
+    debugPrint('Notification init error: $e');
+  }
 
   runApp(const MyApp());
 }

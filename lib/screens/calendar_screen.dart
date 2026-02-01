@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/emotion_provider.dart';
 import '../models/emotion_record.dart';
+import '../theme/app_theme.dart';
 import 'record_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -20,7 +21,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     final emotionProvider = context.watch<EmotionProvider>();
 
-    // 날짜별 감정 매핑
     final Map<DateTime, String> emotionMap = {};
     for (var record in emotionProvider.records) {
       final date = DateTime(
@@ -31,87 +31,156 @@ class _CalendarScreenState extends State<CalendarScreen> {
       emotionMap[date] = record.emotionType;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('감정 캘린더'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: Column(
-        children: [
-          TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _focusedDay,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-            },
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: Colors.blue.shade200,
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: const BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
+    return Container(
+      decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('캘린더', style: AppTextStyles.headline1),
+                  const SizedBox(height: 8),
+                  Text('나의 감정 여정을 돌아봐요', style: AppTextStyles.subtitle),
+                ],
               ),
             ),
-            calendarBuilders: CalendarBuilders(
-              defaultBuilder: (context, day, focusedDay) {
-                final normalizedDay = DateTime(day.year, day.month, day.day);
-                final emotion = emotionMap[normalizedDay];
 
-                return Container(
-                  margin: const EdgeInsets.all(4),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('${day.day}', style: const TextStyle(fontSize: 14)),
-                      if (emotion != null)
-                        Text(emotion, style: const TextStyle(fontSize: 16)),
-                    ],
+            // 캘린더
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: AppDecorations.cardDecoration,
+              child: TableCalendar(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: _focusedDay,
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                },
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: AppTextStyles.headline2.copyWith(
+                    fontSize: 18,
                   ),
-                );
-              },
-              todayBuilder: (context, day, focusedDay) {
-                final normalizedDay = DateTime(day.year, day.month, day.day);
-                final emotion = emotionMap[normalizedDay];
-
-                return Container(
-                  margin: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left_rounded,
+                    color: AppColors.primary,
+                  ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: AppColors.primaryLight,
                     shape: BoxShape.circle,
                   ),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${day.day}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (emotion != null)
-                        Text(emotion, style: const TextStyle(fontSize: 16)),
-                    ],
+                  selectedDecoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    shape: BoxShape.circle,
                   ),
-                );
-              },
+                  weekendTextStyle: TextStyle(color: Colors.red.shade300),
+                  outsideDaysVisible: false,
+                ),
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  weekdayStyle: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  weekendStyle: TextStyle(
+                    color: Colors.red.shade300,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                calendarBuilders: CalendarBuilders(
+                  defaultBuilder: (context, day, focusedDay) {
+                    final normalizedDay = DateTime(
+                      day.year,
+                      day.month,
+                      day.day,
+                    );
+                    final emotion = emotionMap[normalizedDay];
+
+                    return Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: emotion != null
+                          ? BoxDecoration(
+                              color: AppColors.emotionColors[emotion]
+                                  ?.withAlpha(40),
+                              shape: BoxShape.circle,
+                            )
+                          : null,
+                      child: Center(
+                        child: emotion != null
+                            ? Text(
+                                emotion,
+                                style: const TextStyle(fontSize: 18),
+                              )
+                            : Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ),
+                    );
+                  },
+                  todayBuilder: (context, day, focusedDay) {
+                    final normalizedDay = DateTime(
+                      day.year,
+                      day.month,
+                      day.day,
+                    );
+                    final emotion = emotionMap[normalizedDay];
+
+                    return Container(
+                      margin: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withAlpha(30),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.primary, width: 2),
+                      ),
+                      child: Center(
+                        child: emotion != null
+                            ? Text(
+                                emotion,
+                                style: const TextStyle(fontSize: 18),
+                              )
+                            : Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // 선택된 날짜의 기록
-          if (_selectedDay != null)
-            Expanded(child: _buildRecordDetail(emotionProvider, _selectedDay!)),
-        ],
+
+            const SizedBox(height: 16),
+
+            // 선택된 날짜의 기록
+            if (_selectedDay != null)
+              Expanded(
+                child: _buildRecordDetail(emotionProvider, _selectedDay!),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -127,94 +196,171 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     if (record == null) {
-      return const Center(
-        child: Text('이 날은 기록이 없습니다', style: TextStyle(color: Colors.grey)),
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.all(32),
+        decoration: AppDecorations.cardDecoration,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_busy_rounded,
+              size: 48,
+              color: AppColors.textSecondary.withAlpha(100),
+            ),
+            const SizedBox(height: 12),
+            Text('이 날은 기록이 없습니다', style: AppTextStyles.subtitle),
+          ],
+        ),
       );
     }
 
+    final emotionColor =
+        AppColors.emotionColors[record.emotionType] ?? AppColors.primary;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Card(
-        elevation: 4,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        decoration: AppDecorations.cardDecoration,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Text(
-                    record.emotionType,
-                    style: const TextStyle(fontSize: 60),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: emotionColor.withAlpha(30),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      record.emotionType,
+                      style: const TextStyle(fontSize: 48),
+                    ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 20),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           '${record.date.year}년 ${record.date.month}월 ${record.date.day}일',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          record.time,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
+                          style: AppTextStyles.headline2.copyWith(fontSize: 18),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          '강도: ${record.emotionIntensity}/100',
-                          style: const TextStyle(fontSize: 14),
+                        Text(record.time, style: AppTextStyles.subtitle),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: emotionColor.withAlpha(30),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '강도 ${record.emotionIntensity}/100',
+                            style: TextStyle(
+                              color: emotionColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
+
               if (record.content != null) ...[
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
-                Text(record.content!, style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(record.content!, style: AppTextStyles.body),
+                ),
               ],
 
-              const SizedBox(height: 16),
-              const Divider(),
+              const SizedBox(height: 20),
 
               // 수정/삭제 버튼
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // 수정 버튼
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              RecordScreen(existingRecord: record),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                RecordScreen(existingRecord: record),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    label: const Text(
-                      '수정',
-                      style: TextStyle(color: Colors.blue),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.edit_rounded,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '수정',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-
-                  // 삭제 버튼
-                  TextButton.icon(
-                    onPressed: () => _deleteRecord(record!),
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    label: const Text(
-                      '삭제',
-                      style: TextStyle(color: Colors.red),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _deleteRecord(record!),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withAlpha(20),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.delete_rounded,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '삭제',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -230,16 +376,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('기록 삭제'),
         content: const Text('이 기록을 삭제하시겠습니까?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: Text('취소', style: TextStyle(color: AppColors.textSecondary)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('삭제', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -252,9 +405,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('기록이 삭제되었습니다'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('기록이 삭제되었습니다'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }

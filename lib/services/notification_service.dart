@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/data/latest_all.dart' as tz_data;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -14,7 +15,13 @@ class NotificationService {
   static void Function()? onNotificationTap;
 
   Future<void> initialize() async {
-    tz_data.initializeTimeZones();
+    try {
+      // 타임존 초기화
+      tz_data.initializeTimeZones();
+      tz.setLocalLocation(tz.getLocation('Asia/Seoul'));
+    } catch (e) {
+      debugPrint('Timezone init error: $e');
+    }
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -44,42 +51,51 @@ class NotificationService {
   }
 
   Future<bool> requestPermissions() async {
-    final android = await _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.requestNotificationsPermission();
+    try {
+      final android = await _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.requestNotificationsPermission();
 
-    final ios = await _notifications
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >()
-        ?.requestPermissions(alert: true, badge: true, sound: true);
+      final ios = await _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
 
-    return android ?? ios ?? false;
+      return android ?? ios ?? false;
+    } catch (e) {
+      debugPrint('Permission request error: $e');
+      return false;
+    }
   }
 
   Future<void> scheduleDailyNotification(int hour, int minute) async {
-    await _notifications.zonedSchedule(
-      0,
-      '오늘 기분이 어때요? 😊',
-      '감정을 기록하고 음악을 들어보세요',
-      _nextInstanceOfTime(hour, minute),
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'daily_mood',
-          '일일 감정 기록',
-          channelDescription: '매일 정해진 시간에 감정 기록을 알려드립니다',
-          importance: Importance.high,
-          priority: Priority.high,
+    try {
+      await _notifications.zonedSchedule(
+        0,
+        '오늘 기분이 어때요? 😊',
+        '감정을 기록하고 음악을 들어보세요',
+        _nextInstanceOfTime(hour, minute),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_mood',
+            '일일 감정 기록',
+            channelDescription: '매일 정해진 시간에 감정 기록을 알려드립니다',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
         ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      debugPrint('Schedule notification error: $e');
+    }
   }
 
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
