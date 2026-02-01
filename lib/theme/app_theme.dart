@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// MoodLog 앱의 디자인 시스템
 class AppColors {
@@ -47,37 +46,44 @@ class AppColors {
 }
 
 class AppTextStyles {
-  // Gaegu 폰트 적용
-  static TextStyle get headline1 => GoogleFonts.gaegu(
+  // 로컬 Gaegu 폰트 적용
+  static const TextStyle headline1 = TextStyle(
+    fontFamily: 'Gaegu',
     fontSize: 32,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
     letterSpacing: -0.5,
   );
 
-  static TextStyle get headline2 => GoogleFonts.gaegu(
+  static const TextStyle headline2 = TextStyle(
+    fontFamily: 'Gaegu',
     fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
   );
 
-  static TextStyle get subtitle => GoogleFonts.gaegu(
+  static const TextStyle subtitle = TextStyle(
+    fontFamily: 'Gaegu',
     fontSize: 16,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
   );
 
-  static TextStyle get body =>
-      GoogleFonts.gaegu(fontSize: 16, color: AppColors.textPrimary);
+  static const TextStyle body = TextStyle(
+    fontFamily: 'Gaegu',
+    fontSize: 16,
+    color: AppColors.textPrimary,
+  );
 
-  static TextStyle get button => GoogleFonts.gaegu(
+  static const TextStyle button = TextStyle(
+    fontFamily: 'Gaegu',
     fontSize: 18,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
   );
 
-  // 숫자용 (더 가독성 좋은 폰트)
-  static TextStyle get number => GoogleFonts.gaegu(
+  static const TextStyle number = TextStyle(
+    fontFamily: 'Gaegu',
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -115,7 +121,7 @@ class AppTheme {
   static ThemeData get lightTheme => ThemeData(
     primarySwatch: Colors.blue,
     useMaterial3: true,
-    textTheme: GoogleFonts.gaeguTextTheme(),
+    fontFamily: 'Gaegu',
     appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
     cardTheme: const CardThemeData(elevation: 2),
   );
