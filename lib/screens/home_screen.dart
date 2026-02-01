@@ -133,7 +133,8 @@ class _HomeTab extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const RecordScreen(),
+                        builder: (context) =>
+                            RecordScreen(existingRecord: todayRecord),
                       ),
                     );
                   },

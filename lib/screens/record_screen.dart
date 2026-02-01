@@ -8,7 +8,9 @@ import '../widgets/emotion_slider.dart';
 import '../services/music_service.dart';
 
 class RecordScreen extends StatefulWidget {
-  const RecordScreen({super.key});
+  final EmotionRecord? existingRecord; // 수정 모드일 때 전달
+
+  const RecordScreen({super.key, this.existingRecord});
 
   @override
   State<RecordScreen> createState() => _RecordScreenState();
@@ -21,6 +23,20 @@ class _RecordScreenState extends State<RecordScreen> {
   bool _isSaving = false;
 
   final List<String> _emotions = ['😊', '😢', '😡', '😌', '😰', '😑', '🤔'];
+
+  bool get isEditMode => widget.existingRecord != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 수정 모드일 때 기존 데이터 로드
+    if (widget.existingRecord != null) {
+      _selectedEmotion = widget.existingRecord!.emotionType;
+      _intensity = widget.existingRecord!.emotionIntensity.toDouble();
+      _contentController.text = widget.existingRecord!.content ?? '';
+    }
+  }
 
   @override
   void dispose() {
@@ -39,29 +55,59 @@ class _RecordScreenState extends State<RecordScreen> {
     setState(() => _isSaving = true);
 
     final now = DateTime.now();
-    final record = EmotionRecord(
-      date: now,
-      time:
-          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
-      emotionType: _selectedEmotion!,
-      emotionIntensity: _intensity.round(),
-      content: _contentController.text.trim().isEmpty
-          ? null
-          : _contentController.text.trim(),
-      createdAt: now,
-    );
 
     try {
-      await context.read<EmotionProvider>().addRecord(record);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ 기록이 저장되었습니다!'),
-            backgroundColor: Colors.green,
-          ),
+      if (isEditMode) {
+        // 수정 모드
+        final updatedRecord = EmotionRecord(
+          id: widget.existingRecord!.id,
+          date: widget.existingRecord!.date,
+          time:
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+          emotionType: _selectedEmotion!,
+          emotionIntensity: _intensity.round(),
+          content: _contentController.text.trim().isEmpty
+              ? null
+              : _contentController.text.trim(),
+          createdAt: widget.existingRecord!.createdAt,
         );
-        Navigator.pop(context);
+
+        await context.read<EmotionProvider>().updateRecord(updatedRecord);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ 기록이 수정되었습니다!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } else {
+        // 새 기록
+        final record = EmotionRecord(
+          date: now,
+          time:
+              '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+          emotionType: _selectedEmotion!,
+          emotionIntensity: _intensity.round(),
+          content: _contentController.text.trim().isEmpty
+              ? null
+              : _contentController.text.trim(),
+          createdAt: now,
+        );
+
+        await context.read<EmotionProvider>().addRecord(record);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ 기록이 저장되었습니다!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -116,21 +162,22 @@ class _RecordScreenState extends State<RecordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('오늘의 감정 기록'),
+        title: Text(isEditMode ? '감정 기록 수정' : '오늘의 감정 기록'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
-          TextButton(
-            onPressed: settingsProvider.canSnooze ? _snooze : null,
-            child: Text(
-              '미루기 (${settingsProvider.snoozeCount}/3)',
-              style: TextStyle(
-                color: settingsProvider.canSnooze
-                    ? Colors.white
-                    : Colors.grey.shade400,
+          if (!isEditMode)
+            TextButton(
+              onPressed: settingsProvider.canSnooze ? _snooze : null,
+              child: Text(
+                '미루기 (${settingsProvider.snoozeCount}/3)',
+                style: TextStyle(
+                  color: settingsProvider.canSnooze
+                      ? Colors.white
+                      : Colors.grey.shade400,
+                ),
               ),
             ),
-          ),
         ],
       ),
       body: _isSaving
@@ -216,9 +263,9 @@ class _RecordScreenState extends State<RecordScreen> {
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text(
-                        '저장하기',
-                        style: TextStyle(
+                      child: Text(
+                        isEditMode ? '수정 완료' : '저장하기',
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),

@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import 'providers/emotion_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
+import 'screens/record_screen.dart';
 import 'services/notification_service.dart';
+
+// 글로벌 네비게이터 키 (알림에서 화면 이동용)
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +16,13 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.initialize();
   await notificationService.requestPermissions();
+
+  // 알림 클릭 시 RecordScreen으로 이동
+  NotificationService.onNotificationTap = () {
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(builder: (context) => const RecordScreen()),
+    );
+  };
 
   // 기본 알림 설정 (21:00)
   await notificationService.scheduleDailyNotification(21, 0);
@@ -32,6 +43,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'MoodLog',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(

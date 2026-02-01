@@ -18,7 +18,7 @@ class EmotionProvider extends ChangeNotifier {
     try {
       _records = await _db.getAllEmotions();
     } catch (e) {
-      print('Error loading records: $e');
+      debugPrint('Error loading records: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -42,7 +42,34 @@ class EmotionProvider extends ChangeNotifier {
       _records.insert(0, newRecord);
       notifyListeners();
     } catch (e) {
-      print('Error adding record: $e');
+      debugPrint('Error adding record: $e');
+      rethrow;
+    }
+  }
+
+  // 기록 수정
+  Future<void> updateRecord(EmotionRecord record) async {
+    try {
+      await _db.updateEmotion(record);
+      final index = _records.indexWhere((r) => r.id == record.id);
+      if (index != -1) {
+        _records[index] = record;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating record: $e');
+      rethrow;
+    }
+  }
+
+  // 기록 삭제
+  Future<void> deleteRecord(int id) async {
+    try {
+      await _db.deleteEmotion(id);
+      _records.removeWhere((r) => r.id == id);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error deleting record: $e');
       rethrow;
     }
   }
@@ -56,6 +83,20 @@ class EmotionProvider extends ChangeNotifier {
             r.date.year == today.year &&
             r.date.month == today.month &&
             r.date.day == today.day,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 특정 날짜 기록 가져오기
+  EmotionRecord? getRecordByDate(DateTime date) {
+    try {
+      return _records.firstWhere(
+        (r) =>
+            r.date.year == date.year &&
+            r.date.month == date.month &&
+            r.date.day == date.day,
       );
     } catch (e) {
       return null;

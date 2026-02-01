@@ -10,6 +10,9 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
+  // 알림 클릭 시 호출될 콜백
+  static void Function()? onNotificationTap;
+
   Future<void> initialize() async {
     tz_data.initializeTimeZones();
 
@@ -27,7 +30,17 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _notifications.initialize(settings);
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: _onNotificationTap,
+    );
+  }
+
+  // 알림 클릭 핸들러
+  static void _onNotificationTap(NotificationResponse response) {
+    if (onNotificationTap != null) {
+      onNotificationTap!();
+    }
   }
 
   Future<bool> requestPermissions() async {

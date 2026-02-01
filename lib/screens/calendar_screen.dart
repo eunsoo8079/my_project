@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../providers/emotion_provider.dart';
 import '../models/emotion_record.dart';
+import 'record_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -181,10 +182,89 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 const SizedBox(height: 8),
                 Text(record.content!, style: const TextStyle(fontSize: 16)),
               ],
+
+              const SizedBox(height: 16),
+              const Divider(),
+
+              // 수정/삭제 버튼
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // 수정 버튼
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              RecordScreen(existingRecord: record),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    label: const Text(
+                      '수정',
+                      style: TextStyle(color: Colors.blue),
+                    ),
+                  ),
+
+                  // 삭제 버튼
+                  TextButton.icon(
+                    onPressed: () => _deleteRecord(record!),
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    label: const Text(
+                      '삭제',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _deleteRecord(EmotionRecord record) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('기록 삭제'),
+        content: const Text('이 기록을 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await context.read<EmotionProvider>().deleteRecord(record.id!);
+        setState(() => _selectedDay = null);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('기록이 삭제되었습니다'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+        }
+      }
+    }
   }
 }
