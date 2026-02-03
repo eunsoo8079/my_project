@@ -37,6 +37,9 @@ dependencies:
   # iOS 스타일 아이콘
   cupertino_icons: ^1.0.8
 
+  # 오디오 재생
+  audioplayers: ^5.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -54,6 +57,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/Sound/
   fonts:
     - family: BareunBatang
       fonts:

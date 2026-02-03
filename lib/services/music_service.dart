@@ -1,43 +1,81 @@
-import 'package:url_launcher/url_launcher.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 
 class MusicService {
-  // 감정별 YouTube 플레이리스트 URL
-  // TODO: 실제 플레이리스트로 교체하세요
-  static const Map<String, String> _playlists = {
-    '😊':
-        'https://youtube.com/playlist?list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI', // Happy
-    '😢':
-        'https://youtube.com/playlist?list=PLFgquLnL59akA2PflFpeQG9L01VFg90wS', // Sad
-    '😡':
-        'https://youtube.com/playlist?list=PLFgquLnL59an0KfeviQPIvNAXy0dFOKy4', // Angry/Intense
-    '😌':
-        'https://youtube.com/playlist?list=PLFgquLnL59alcyR5Alj1kdVd00gVXY6HL', // Calm
-    '😰':
-        'https://youtube.com/playlist?list=PLFgquLnL59alcyR5Alj1kdVd00gVXY6HL', // Anxious (Calm)
-    '😑':
-        'https://youtube.com/playlist?list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI', // Neutral (Happy)
-    '🤔':
-        'https://youtube.com/playlist?list=PLFgquLnL59amY77GhhSOZ7bDELKwmlA3X', // Confused (Focus)
+  static final MusicService _instance = MusicService._internal();
+  factory MusicService() => _instance;
+  MusicService._internal();
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+
+  // 감정별 로컬 음악 파일 매핑
+  static const Map<String, String> _musicFiles = {
+    '😊': 'Sound/Happy.mp3', // 기쁨
+    '😢': 'Sound/Sad.mp3', // 슬픔
+    '😡': 'Sound/Angry.mp3', // 분노
+    '😌': 'Sound/Relax.mp3', // 평온
+    '😰': 'Sound/Relax.mp3', // 불안 -> 평온한 음악
+    '😑': 'Sound/Absurd.mp3', // 무표정
+    '🤔': 'Sound/Curious.mp3', // 궁금
   };
 
-  Future<bool> playMusic(String emotion) async {
-    final url = _playlists[emotion];
-    if (url == null) return false;
+  bool get isPlaying => _isPlaying;
 
-    final uri = Uri.parse(url);
+  Future<bool> playMusic(String emotion) async {
+    final musicFile = _musicFiles[emotion];
+    if (musicFile == null) return false;
 
     try {
-      if (await canLaunchUrl(uri)) {
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // 이미 재생 중이면 중지
+      if (_isPlaying) {
+        await _audioPlayer.stop();
       }
-      return false;
+
+      // 로컬 에셋에서 음악 재생
+      await _audioPlayer.play(AssetSource(musicFile));
+      _isPlaying = true;
+
+      // 재생 완료 시 상태 업데이트
+      _audioPlayer.onPlayerComplete.listen((_) {
+        _isPlaying = false;
+      });
+
+      return true;
     } catch (e) {
-      print('Error launching music: $e');
+      debugPrint('Error playing music: $e');
       return false;
     }
   }
 
-  String? getPlaylistUrl(String emotion) {
-    return _playlists[emotion];
+  Future<void> stopMusic() async {
+    try {
+      await _audioPlayer.stop();
+      _isPlaying = false;
+    } catch (e) {
+      debugPrint('Error stopping music: $e');
+    }
+  }
+
+  Future<void> pauseMusic() async {
+    try {
+      await _audioPlayer.pause();
+      _isPlaying = false;
+    } catch (e) {
+      debugPrint('Error pausing music: $e');
+    }
+  }
+
+  Future<void> resumeMusic() async {
+    try {
+      await _audioPlayer.resume();
+      _isPlaying = true;
+    } catch (e) {
+      debugPrint('Error resuming music: $e');
+    }
+  }
+
+  void dispose() {
+    _audioPlayer.dispose();
   }
 }
