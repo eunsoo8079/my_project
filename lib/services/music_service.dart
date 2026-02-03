@@ -6,8 +6,9 @@ class MusicService {
   factory MusicService() => _instance;
   MusicService._internal();
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  AudioPlayer? _audioPlayer;
   bool _isPlaying = false;
+  String? _currentEmotion;
 
   // 감정별 로컬 음악 파일 매핑
   static const Map<String, String> _musicFiles = {
@@ -21,37 +22,64 @@ class MusicService {
   };
 
   bool get isPlaying => _isPlaying;
+  String? get currentEmotion => _currentEmotion;
 
   Future<bool> playMusic(String emotion) async {
     final musicFile = _musicFiles[emotion];
     if (musicFile == null) return false;
 
     try {
-      // 이미 재생 중이면 중지
-      if (_isPlaying) {
-        await _audioPlayer.stop();
-      }
+      // 기존 플레이어 정리
+      await _audioPlayer?.stop();
+      await _audioPlayer?.dispose();
 
-      // 로컬 에셋에서 음악 재생
-      await _audioPlayer.play(AssetSource(musicFile));
-      _isPlaying = true;
+      // 새 플레이어 생성
+      _audioPlayer = AudioPlayer();
 
       // 재생 완료 시 상태 업데이트
-      _audioPlayer.onPlayerComplete.listen((_) {
+      _audioPlayer!.onPlayerComplete.listen((_) {
         _isPlaying = false;
+        _currentEmotion = null;
+        debugPrint('Music playback completed');
       });
+
+      // 에러 처리
+      _audioPlayer!.onLog.listen((msg) {
+        debugPrint('AudioPlayer log: $msg');
+      });
+
+      // 로컬 에셋에서 음악 재생
+      debugPrint('Playing music: $musicFile');
+      await _audioPlayer!.setSource(AssetSource(musicFile));
+      await _audioPlayer!.resume();
+
+      _isPlaying = true;
+      _currentEmotion = emotion;
+      debugPrint('Music started playing');
 
       return true;
     } catch (e) {
       debugPrint('Error playing music: $e');
+      _isPlaying = false;
+      _currentEmotion = null;
       return false;
+    }
+  }
+
+  Future<void> toggleMusic(String emotion) async {
+    if (_isPlaying && _currentEmotion == emotion) {
+      await stopMusic();
+    } else {
+      await playMusic(emotion);
     }
   }
 
   Future<void> stopMusic() async {
     try {
-      await _audioPlayer.stop();
+      await _audioPlayer?.stop();
       _isPlaying = false;
+      _currentEmotion = null;
+      debugPrint('Music stopped');
     } catch (e) {
       debugPrint('Error stopping music: $e');
     }
@@ -59,7 +87,7 @@ class MusicService {
 
   Future<void> pauseMusic() async {
     try {
-      await _audioPlayer.pause();
+      await _audioPlayer?.pause();
       _isPlaying = false;
     } catch (e) {
       debugPrint('Error pausing music: $e');
@@ -68,7 +96,7 @@ class MusicService {
 
   Future<void> resumeMusic() async {
     try {
-      await _audioPlayer.resume();
+      await _audioPlayer?.resume();
       _isPlaying = true;
     } catch (e) {
       debugPrint('Error resuming music: $e');
@@ -76,6 +104,9 @@ class MusicService {
   }
 
   void dispose() {
-    _audioPlayer.dispose();
+    _audioPlayer?.dispose();
+    _audioPlayer = null;
+    _isPlaying = false;
+    _currentEmotion = null;
   }
 }

@@ -182,6 +182,33 @@ class SettingsScreen extends StatelessWidget {
                         },
                       ),
                     ),
+                    Divider(
+                      height: 1,
+                      indent: 60,
+                      color: Colors.grey.withAlpha(30),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.send_rounded,
+                      iconColor: AppColors.success,
+                      title: '알림 테스트',
+                      subtitle: '지금 알림이 오는지 확인',
+                      onTap: () async {
+                        await NotificationService().showTestNotification();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('테스트 알림을 보냈습니다!'),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
                   ],
                 ),
               ),
