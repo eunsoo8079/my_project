@@ -48,7 +48,7 @@ class AppColors {
 class AppTextStyles {
   // 로컬 Gaegu 폰트 적용
   static const TextStyle headline1 = TextStyle(
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     fontSize: 32,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -56,34 +56,34 @@ class AppTextStyles {
   );
 
   static const TextStyle headline2 = TextStyle(
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     fontSize: 24,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
   );
 
   static const TextStyle subtitle = TextStyle(
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     fontSize: 16,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
   );
 
   static const TextStyle body = TextStyle(
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     fontSize: 16,
     color: AppColors.textPrimary,
   );
 
   static const TextStyle button = TextStyle(
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     fontSize: 18,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.5,
   );
 
   static const TextStyle number = TextStyle(
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     fontSize: 28,
     fontWeight: FontWeight.bold,
     color: AppColors.textPrimary,
@@ -121,7 +121,7 @@ class AppTheme {
   static ThemeData get lightTheme => ThemeData(
     primarySwatch: Colors.blue,
     useMaterial3: true,
-    fontFamily: 'Gaegu',
+    fontFamily: 'BareunBatang',
     appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
     cardTheme: const CardThemeData(elevation: 2),
   );

@@ -55,8 +55,6 @@ flutter:
   assets:
     - assets/
   fonts:
-    - family: Gaegu
+    - family: BareunBatang
       fonts:
-        - asset: assets/Gaegu-Regular.ttf
-        - asset: assets/Gaegu-Bold.ttf
-          weight: 700
+        - asset: assets/BareunBatangPro1.ttf
