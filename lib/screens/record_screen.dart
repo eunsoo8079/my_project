@@ -22,6 +22,7 @@ class _RecordScreenState extends State<RecordScreen> {
   String? _selectedEmotion;
   double _intensity = 50;
   bool _isSaving = false;
+  late DateTime _selectedDate;
 
   final List<String> _emotions = ['😊', '😢', '😡', '😌', '😰', '😑', '🤔'];
 
@@ -34,6 +35,9 @@ class _RecordScreenState extends State<RecordScreen> {
       _selectedEmotion = widget.existingRecord!.emotionType;
       _intensity = widget.existingRecord!.emotionIntensity.toDouble();
       _contentController.text = widget.existingRecord!.content ?? '';
+      _selectedDate = widget.existingRecord!.date;
+    } else {
+      _selectedDate = DateTime.now();
     }
   }
 
@@ -78,7 +82,7 @@ class _RecordScreenState extends State<RecordScreen> {
         await context.read<EmotionProvider>().updateRecord(updatedRecord);
       } else {
         final record = EmotionRecord(
-          date: now,
+          date: _selectedDate,
           time:
               '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
           emotionType: _selectedEmotion!,
@@ -145,6 +149,30 @@ class _RecordScreenState extends State<RecordScreen> {
         ),
       );
       Navigator.pop(context);
+    }
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() => _selectedDate = picked);
     }
   }
 
@@ -232,13 +260,58 @@ class _RecordScreenState extends State<RecordScreen> {
                         delegate: SliverChildListDelegate([
                           // 제목
                           Text(
-                            isEditMode ? '기록 수정' : '오늘의 감정',
+                            isEditMode ? '기록 수정' : '감정 기록',
                             style: AppTextStyles.headline1,
                           ),
                           const SizedBox(height: 8),
                           Text('지금 기분이 어떠세요?', style: AppTextStyles.subtitle),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 16),
+
+                          // 날짜 선택
+                          GestureDetector(
+                            onTap: isEditMode ? null : _selectDate,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primary.withAlpha(50),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 18,
+                                    color: AppColors.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_selectedDate.year}년 ${_selectedDate.month}월 ${_selectedDate.day}일',
+                                    style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (!isEditMode) ...[
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_drop_down_rounded,
+                                      color: AppColors.primary,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
 
                           // 감정 선택
                           Container(
