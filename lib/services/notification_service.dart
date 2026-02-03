@@ -23,6 +23,38 @@ class NotificationService {
       debugPrint('Timezone init error: $e');
     }
 
+    // Android 알림 채널 생성
+    const AndroidNotificationChannel dailyChannel = AndroidNotificationChannel(
+      'daily_mood',
+      '일일 감정 기록',
+      description: '매일 정해진 시간에 감정 기록을 알려드립니다',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
+    const AndroidNotificationChannel testChannel = AndroidNotificationChannel(
+      'test_channel',
+      '테스트 알림',
+      description: '알림 테스트용 채널',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    // 채널 등록
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(dailyChannel);
+      await androidPlugin.createNotificationChannel(testChannel);
+      debugPrint('Notification channels created');
+    }
+
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
@@ -41,6 +73,8 @@ class NotificationService {
       settings,
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
+
+    debugPrint('Notification service initialized');
   }
 
   // 알림 클릭 핸들러
@@ -64,7 +98,9 @@ class NotificationService {
           >()
           ?.requestPermissions(alert: true, badge: true, sound: true);
 
-      return android ?? ios ?? false;
+      final result = android ?? ios ?? false;
+      debugPrint('Permission request result: $result');
+      return result;
     } catch (e) {
       debugPrint('Permission request error: $e');
       return false;
@@ -83,8 +119,11 @@ class NotificationService {
             'daily_mood',
             '일일 감정 기록',
             channelDescription: '매일 정해진 시간에 감정 기록을 알려드립니다',
-            importance: Importance.high,
-            priority: Priority.high,
+            importance: Importance.max,
+            priority: Priority.max,
+            playSound: true,
+            enableVibration: true,
+            visibility: NotificationVisibility.public,
           ),
           iOS: DarwinNotificationDetails(),
         ),
@@ -93,6 +132,7 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
+      debugPrint('Daily notification scheduled for $hour:$minute');
     } catch (e) {
       debugPrint('Schedule notification error: $e');
     }
@@ -123,6 +163,7 @@ class NotificationService {
   // 즉시 알림 테스트 (디버깅용)
   Future<void> showTestNotification() async {
     try {
+      debugPrint('Sending test notification...');
       await _notifications.show(
         999,
         '테스트 알림 🔔',
@@ -133,7 +174,11 @@ class NotificationService {
             '테스트 알림',
             channelDescription: '알림 테스트용 채널',
             importance: Importance.max,
-            priority: Priority.high,
+            priority: Priority.max,
+            playSound: true,
+            enableVibration: true,
+            visibility: NotificationVisibility.public,
+            fullScreenIntent: true,
           ),
           iOS: DarwinNotificationDetails(),
         ),
