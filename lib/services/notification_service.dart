@@ -109,11 +109,13 @@ class NotificationService {
 
   Future<void> scheduleDailyNotification(int hour, int minute) async {
     try {
+      final scheduledTime = _nextInstanceOfTime(hour, minute);
+
       await _notifications.zonedSchedule(
         0,
         '오늘 기분이 어때요? 😊',
         '감정을 기록하고 음악을 들어보세요',
-        _nextInstanceOfTime(hour, minute),
+        scheduledTime,
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'daily_mood',
@@ -132,9 +134,8 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
-      debugPrint('Daily notification scheduled for $hour:$minute');
     } catch (e) {
-      debugPrint('Schedule notification error: $e');
+      debugPrint('[Notification] Schedule ERROR: $e');
     }
   }
 
@@ -158,39 +159,5 @@ class NotificationService {
 
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
-  }
-
-  // 즉시 알림 테스트 (디버깅용)
-  Future<void> showTestNotification() async {
-    try {
-      debugPrint('Sending test notification...');
-      await _notifications.show(
-        999,
-        '테스트 알림 🔔',
-        '알림이 정상적으로 작동합니다!',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'test_channel',
-            '테스트 알림',
-            channelDescription: '알림 테스트용 채널',
-            importance: Importance.max,
-            priority: Priority.max,
-            playSound: true,
-            enableVibration: true,
-            visibility: NotificationVisibility.public,
-            fullScreenIntent: true,
-          ),
-          iOS: DarwinNotificationDetails(),
-        ),
-      );
-      debugPrint('Test notification sent successfully');
-    } catch (e) {
-      debugPrint('Test notification error: $e');
-    }
-  }
-
-  // 예약된 알림 목록 확인
-  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
-    return await _notifications.pendingNotificationRequests();
   }
 }

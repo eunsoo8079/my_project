@@ -5,6 +5,7 @@ import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/record_screen.dart';
 import 'services/notification_service.dart';
+import 'services/database_service.dart';
 import 'theme/app_theme.dart';
 
 // 글로벌 네비게이터 키 (알림에서 화면 이동용)
@@ -47,21 +48,25 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _requestPermissions() async {
-    // 약간의 딜레이 후 권한 요청 (UI가 완전히 로드된 후)
     await Future.delayed(const Duration(milliseconds: 500));
 
     try {
       final notificationService = NotificationService();
       final granted = await notificationService.requestPermissions();
-      debugPrint('Notification permission granted: $granted');
 
       if (granted) {
-        // 기본 알림 설정 (21:00)
-        await notificationService.scheduleDailyNotification(21, 0);
-        debugPrint('Daily notification scheduled at 21:00');
+        final db = DatabaseService.instance;
+        final enabled = await db.getSetting('notification_enabled');
+        if (enabled == 'false') return;
+
+        final timeStr = await db.getSetting('notification_time') ?? '21:00';
+        final parts = timeStr.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        await notificationService.scheduleDailyNotification(hour, minute);
       }
     } catch (e) {
-      debugPrint('Permission request error: $e');
+      debugPrint('Notification setup error: $e');
     }
   }
 
