@@ -124,16 +124,6 @@ class _RecordScreenState extends State<RecordScreen> {
     }
   }
 
-  Future<void> _playMusic() async {
-    if (_selectedEmotion == null) return;
-    final success = await MusicService().playMusic(_selectedEmotion!);
-    if (!success && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('음악 재생에 실패했습니다')));
-    }
-  }
-
   Future<void> _snooze() async {
     final settingsProvider = context.read<SettingsProvider>();
     if (!settingsProvider.canSnooze) {
@@ -353,43 +343,85 @@ class _RecordScreenState extends State<RecordScreen> {
                           const SizedBox(height: 24),
 
                           // 음악 버튼
-                          GestureDetector(
-                            onTap: _selectedEmotion != null ? _playMusic : null,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: _selectedEmotion != null
-                                      ? AppColors.primary
-                                      : Colors.grey.withAlpha(50),
-                                  width: 2,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.music_note_rounded,
-                                    color: _selectedEmotion != null
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '감정에 맞는 음악 듣기',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: _selectedEmotion != null
-                                          ? AppColors.primary
-                                          : AppColors.textSecondary,
+                          Builder(
+                            builder: (context) {
+                              final music = context.watch<MusicService>();
+                              final isCurrentPlaying = music.isPlaying &&
+                                  music.currentEmotion == _selectedEmotion;
+                              final isCurrentPaused = music.isPaused &&
+                                  music.currentEmotion == _selectedEmotion;
+                              final isActive = isCurrentPlaying || isCurrentPaused;
+                              final emotionColor = _selectedEmotion != null
+                                  ? AppColors.emotionColors[_selectedEmotion] ??
+                                      AppColors.primary
+                                  : AppColors.primary;
+
+                              return GestureDetector(
+                                onTap: _selectedEmotion != null
+                                    ? () {
+                                        if (isCurrentPlaying) {
+                                          music.pauseMusic();
+                                        } else if (isCurrentPaused) {
+                                          music.resumeMusic();
+                                        } else {
+                                          music.playMusic(_selectedEmotion!);
+                                        }
+                                      }
+                                    : null,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? emotionColor.withAlpha(15)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? emotionColor
+                                          : _selectedEmotion != null
+                                              ? AppColors.primary
+                                              : Colors.grey.withAlpha(50),
+                                      width: 2,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isCurrentPlaying
+                                            ? Icons.pause_rounded
+                                            : isCurrentPaused
+                                                ? Icons.play_arrow_rounded
+                                                : Icons.music_note_rounded,
+                                        color: _selectedEmotion != null
+                                            ? (isActive
+                                                ? emotionColor
+                                                : AppColors.primary)
+                                            : AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        isCurrentPlaying
+                                            ? '재생 중 🎵'
+                                            : isCurrentPaused
+                                                ? '일시정지됨 ⏸'
+                                                : '감정에 맞는 음악 듣기',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: _selectedEmotion != null
+                                              ? (isActive
+                                                  ? emotionColor
+                                                  : AppColors.primary)
+                                              : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
 
                           const SizedBox(height: 24),

@@ -4,6 +4,7 @@ import 'providers/emotion_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/record_screen.dart';
+import 'services/music_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart';
 import 'theme/app_theme.dart';
@@ -78,6 +79,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(
           create: (_) => SettingsProvider()..loadSettings(),
         ),
+        ChangeNotifierProvider.value(value: MusicService()),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
