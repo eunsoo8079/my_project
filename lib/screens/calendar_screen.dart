@@ -210,6 +210,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
             const SizedBox(height: 12),
             Text('이 날은 기록이 없습니다', style: AppTextStyles.subtitle),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        RecordScreen(initialDate: selectedDay),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                decoration: AppDecorations.primaryButtonDecoration,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.add_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '기록하기',
+                      style: AppTextStyles.button.copyWith(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       );

@@ -10,8 +10,9 @@ import '../theme/app_theme.dart';
 
 class RecordScreen extends StatefulWidget {
   final EmotionRecord? existingRecord;
+  final DateTime? initialDate;
 
-  const RecordScreen({super.key, this.existingRecord});
+  const RecordScreen({super.key, this.existingRecord, this.initialDate});
 
   @override
   State<RecordScreen> createState() => _RecordScreenState();
@@ -37,7 +38,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _contentController.text = widget.existingRecord!.content ?? '';
       _selectedDate = widget.existingRecord!.date;
     } else {
-      _selectedDate = DateTime.now();
+      _selectedDate = widget.initialDate ?? DateTime.now();
     }
   }
 
