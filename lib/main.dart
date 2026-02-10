@@ -4,6 +4,7 @@ import 'providers/emotion_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/record_screen.dart';
+import 'screens/survey_screen.dart';
 import 'services/music_service.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart';
@@ -86,8 +87,45 @@ class _MyAppState extends State<MyApp> {
         title: 'MoodLog',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const HomeScreen(),
+        home: const _InitialScreen(),
       ),
+    );
+  }
+}
+
+/// 설문 완료 여부에 따라 초기 화면 결정
+class _InitialScreen extends StatelessWidget {
+  const _InitialScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: DatabaseService.instance.getSetting('survey_completed'),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFF0F4FF), Color(0xFFE8EEFF)],
+                ),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            ),
+          );
+        }
+
+        final surveyDone = snapshot.data == 'true';
+        if (surveyDone) {
+          return const HomeScreen();
+        } else {
+          return const SurveyScreen();
+        }
+      },
     );
   }
 }

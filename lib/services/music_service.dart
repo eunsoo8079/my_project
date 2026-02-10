@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'database_service.dart';
 
 class MusicService extends ChangeNotifier {
   static final MusicService _instance = MusicService._internal();
@@ -14,13 +16,14 @@ class MusicService extends ChangeNotifier {
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
   Timer? _dismissTimer;
+  double? _energyScore;
 
   StreamSubscription? _positionSub;
   StreamSubscription? _durationSub;
   StreamSubscription? _completeSub;
 
-  // 감정별 로컬 음악 파일 매핑
-  static const Map<String, String> _musicFiles = {
+  // 감정별 기본 음악 파일 (폴백용)
+  static const Map<String, String> _defaultMusicFiles = {
     '😊': 'Sound/Happy.mp3',
     '😢': 'Sound/Sad.mp3',
     '😡': 'Sound/Angry.mp3',
@@ -28,6 +31,17 @@ class MusicService extends ChangeNotifier {
     '😰': 'Sound/Relax.mp3',
     '😑': 'Sound/Absurd.mp3',
     '🤔': 'Sound/Curious.mp3',
+  };
+
+  // 감정 → 파일 이름 매핑 (유형별 폴더 내에서 사용)
+  static const Map<String, String> _emotionFileNames = {
+    '😊': 'happy.mp3',
+    '😢': 'sad.mp3',
+    '😡': 'angry.mp3',
+    '😌': 'relax.mp3',
+    '😰': 'anxious.mp3',
+    '😑': 'neutral.mp3',
+    '🤔': 'curious.mp3',
   };
 
   static const Map<String, String> _emotionNames = {
@@ -53,12 +67,60 @@ class MusicService extends ChangeNotifier {
   String get currentMusicTitle =>
       _currentEmotion != null ? '$currentEmotionName 음악' : '';
   bool get hasActiveSession => _currentEmotion != null;
+  double? get energyScore => _energyScore;
+
+  /// DB에서 에너지 점수 로드 (0.0~1.0)
+  Future<void> loadMusicType() async {
+    try {
+      final scoreStr = await DatabaseService.instance.getSetting('energy_score');
+      if (scoreStr != null) {
+        _energyScore = double.parse(scoreStr);
+        debugPrint('Energy score loaded: $_energyScore');
+      }
+    } catch (e) {
+      debugPrint('Error loading energy score: $e');
+    }
+  }
+
+  /// 감정에 맞는 음악 파일 경로 결정 (에너지 기반 → 기본 폴백)
+  Future<String> _getMusicPath(String emotion) async {
+    // 에너지 점수가 있으면 calm/energetic 폴더에서 찾기
+    if (_energyScore != null) {
+      final folder = _energyScore! >= 0.5 ? 'energetic' : 'calm';
+      final emotionFile = _emotionFileNames[emotion];
+      if (emotionFile != null) {
+        final typedPath = 'Sound/$folder/$emotionFile';
+        if (await _assetExists(typedPath)) {
+          debugPrint('Using $folder music: $typedPath');
+          return typedPath;
+        }
+        debugPrint('$folder music not found, falling back: $typedPath');
+      }
+    }
+
+    // 폴백: 기본 음악 파일
+    return _defaultMusicFiles[emotion] ?? 'Sound/Happy.mp3';
+  }
+
+  /// 에셋 파일 존재 여부 확인
+  Future<bool> _assetExists(String path) async {
+    try {
+      await rootBundle.load('assets/$path');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<bool> playMusic(String emotion) async {
-    final musicFile = _musicFiles[emotion];
-    if (musicFile == null) return false;
-
     try {
+      // 에너지 점수가 아직 로드되지 않았으면 로드
+      if (_energyScore == null) {
+        await loadMusicType();
+      }
+
+      final musicFile = await _getMusicPath(emotion);
+
       _dismissTimer?.cancel();
       _dismissTimer = null;
       await _cancelSubscriptions();
@@ -80,10 +142,9 @@ class MusicService extends ChangeNotifier {
       _completeSub = _audioPlayer!.onPlayerComplete.listen((_) {
         _isPlaying = false;
         _isPaused = false;
-        _position = _duration; // 끝까지 도달 표시
+        _position = _duration;
         notifyListeners();
 
-        // 2초 후 세션 정리 (자연스러운 사라짐)
         _dismissTimer = Timer(const Duration(seconds: 2), () {
           _currentEmotion = null;
           _position = Duration.zero;
@@ -192,6 +253,11 @@ class MusicService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error seeking: $e');
     }
+  }
+
+  /// 음악 성향 변경 시 호출 (재설문 후)
+  void refreshMusicType() {
+    _energyScore = null; // 다음 재생 시 다시 로드
   }
 
   Future<void> _cancelSubscriptions() async {

@@ -4,7 +4,10 @@ import '../providers/settings_provider.dart';
 import '../providers/emotion_provider.dart';
 import '../services/notification_service.dart';
 import '../services/database_service.dart';
+import '../services/music_service.dart';
+import '../models/survey_data.dart';
 import '../theme/app_theme.dart';
+import 'survey_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -184,6 +187,43 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // 음악 취향
+              _SectionTitle(title: '음악', icon: Icons.music_note_rounded),
+              const SizedBox(height: 16),
+
+              FutureBuilder<String?>(
+                future: DatabaseService.instance.getSetting('music_type'),
+                builder: (context, snapshot) {
+                  final typeId = int.tryParse(snapshot.data ?? '');
+                  final typeName = typeId != null
+                      ? SurveyData.getTypeById(typeId)
+                      : null;
+                  return Container(
+                    decoration: AppDecorations.cardDecoration,
+                    child: _SettingsTile(
+                      icon: Icons.headphones_rounded,
+                      iconColor: AppColors.primary,
+                      title: '음악 취향 다시 설정',
+                      subtitle: typeName != null
+                          ? '${typeName.emoji} ${typeName.name}'
+                          : '설문을 완료해주세요',
+                      onTap: () {
+                        context.read<MusicService>().refreshMusicType();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SurveyScreen(),
+                          ),
+                        );
+                      },
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 32),
