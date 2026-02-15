@@ -126,6 +126,7 @@ class MusicService extends ChangeNotifier {
   /// iTunes 미리듣기 URL 가져오기 (큐레이션 트랙에서 랜덤 선택)
   Future<String?> _getPreviewUrl(String emotion) async {
     if (_energyScore == null) return null;
+    await CuratedTracks.load();
     final trackIds = CuratedTracks.getTracks(_energyScore!, emotion);
     if (trackIds.isEmpty) return null;
 
