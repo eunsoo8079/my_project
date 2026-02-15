@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../models/curated_tracks.dart';
 import 'database_service.dart';
+import 'itunes_service.dart';
 
 class MusicService extends ChangeNotifier {
   static final MusicService _instance = MusicService._internal();
@@ -17,6 +20,9 @@ class MusicService extends ChangeNotifier {
   Duration _duration = Duration.zero;
   Timer? _dismissTimer;
   double? _energyScore;
+  String? _trackName;
+  String? _artistName;
+  bool _isStreaming = false; // true = iTunes preview, false = local file
 
   StreamSubscription? _positionSub;
   StreamSubscription? _durationSub;
@@ -64,9 +70,14 @@ class MusicService extends ChangeNotifier {
   Duration get position => _position;
   Duration get duration => _duration;
   String get currentEmotionName => _emotionNames[_currentEmotion] ?? '';
-  String get currentMusicTitle =>
-      _currentEmotion != null ? '$currentEmotionName 음악' : '';
+  String get currentMusicTitle {
+    if (_trackName != null && _artistName != null) {
+      return '$_artistName - $_trackName';
+    }
+    return _currentEmotion != null ? '$currentEmotionName 음악' : '';
+  }
   bool get hasActiveSession => _currentEmotion != null;
+  bool get isStreaming => _isStreaming;
   double? get energyScore => _energyScore;
 
   /// DB에서 에너지 점수 로드 (0.0~1.0)
@@ -112,14 +123,29 @@ class MusicService extends ChangeNotifier {
     }
   }
 
+  /// iTunes 미리듣기 URL 가져오기 (큐레이션 트랙에서 랜덤 선택)
+  Future<String?> _getPreviewUrl(String emotion) async {
+    if (_energyScore == null) return null;
+    final trackIds = CuratedTracks.getTracks(_energyScore!, emotion);
+    if (trackIds.isEmpty) return null;
+
+    // 랜덤으로 곡 선택
+    final trackId = trackIds[Random().nextInt(trackIds.length)];
+    final track = await ItunesService.getTrack(trackId);
+    if (track != null) {
+      _trackName = track['trackName'] as String?;
+      _artistName = track['artistName'] as String?;
+      return track['previewUrl'] as String?;
+    }
+    return null;
+  }
+
   Future<bool> playMusic(String emotion) async {
     try {
       // 에너지 점수가 아직 로드되지 않았으면 로드
       if (_energyScore == null) {
         await loadMusicType();
       }
-
-      final musicFile = await _getMusicPath(emotion);
 
       _dismissTimer?.cancel();
       _dismissTimer = null;
@@ -128,6 +154,8 @@ class MusicService extends ChangeNotifier {
       await _audioPlayer?.dispose();
 
       _audioPlayer = AudioPlayer();
+      _trackName = null;
+      _artistName = null;
 
       _positionSub = _audioPlayer!.onPositionChanged.listen((pos) {
         _position = pos;
@@ -147,6 +175,8 @@ class MusicService extends ChangeNotifier {
 
         _dismissTimer = Timer(const Duration(seconds: 2), () {
           _currentEmotion = null;
+          _trackName = null;
+          _artistName = null;
           _position = Duration.zero;
           _duration = Duration.zero;
           _dismissTimer = null;
@@ -160,8 +190,19 @@ class MusicService extends ChangeNotifier {
         debugPrint('AudioPlayer log: $msg');
       });
 
-      debugPrint('Playing music: $musicFile');
-      await _audioPlayer!.setSource(AssetSource(musicFile));
+      // 1순위: iTunes 미리듣기 (온라인)
+      final previewUrl = await _getPreviewUrl(emotion);
+      if (previewUrl != null) {
+        debugPrint('Playing iTunes preview: $previewUrl');
+        await _audioPlayer!.setSource(UrlSource(previewUrl));
+        _isStreaming = true;
+      } else {
+        // 2순위: 로컬 파일 (오프라인 폴백)
+        final musicFile = await _getMusicPath(emotion);
+        debugPrint('Playing local music: $musicFile');
+        await _audioPlayer!.setSource(AssetSource(musicFile));
+        _isStreaming = false;
+      }
       await _audioPlayer!.resume();
 
       _isPlaying = true;
@@ -177,6 +218,8 @@ class MusicService extends ChangeNotifier {
       _isPlaying = false;
       _isPaused = false;
       _currentEmotion = null;
+      _trackName = null;
+      _artistName = null;
       notifyListeners();
       return false;
     }

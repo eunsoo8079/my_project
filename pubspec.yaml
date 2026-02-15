@@ -40,6 +40,9 @@ dependencies:
   # 오디오 재생
   audioplayers: ^5.2.1
 
+  # HTTP 요청 (iTunes API)
+  http: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
