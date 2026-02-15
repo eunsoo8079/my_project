@@ -216,7 +216,7 @@ class SettingsScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const SurveyScreen(),
+                            builder: (_) => const SurveyScreen(isRetake: true),
                           ),
                         );
                       },

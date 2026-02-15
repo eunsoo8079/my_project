@@ -5,7 +5,9 @@ import '../theme/app_theme.dart';
 import 'survey_result_screen.dart';
 
 class SurveyScreen extends StatefulWidget {
-  const SurveyScreen({super.key});
+  final bool isRetake;
+
+  const SurveyScreen({super.key, this.isRetake = false});
 
   @override
   State<SurveyScreen> createState() => _SurveyScreenState();
@@ -13,6 +15,7 @@ class SurveyScreen extends StatefulWidget {
 
 class _SurveyScreenState extends State<SurveyScreen>
     with SingleTickerProviderStateMixin {
+  bool _showIntro = true; // 인트로 화면 표시 여부
   int _currentIndex = 0;
   final List<int> _answers = List.filled(9, -1); // -1 = 미답변
   late AnimationController _animController;
@@ -44,6 +47,14 @@ class _SurveyScreenState extends State<SurveyScreen>
     super.dispose();
   }
 
+  void _startSurvey() {
+    _animController.reset();
+    setState(() {
+      _showIntro = false;
+    });
+    _animController.forward();
+  }
+
   void _selectAnswer(int answer) async {
     setState(() {
       _answers[_currentIndex] = answer;
@@ -69,6 +80,13 @@ class _SurveyScreenState extends State<SurveyScreen>
       _animController.reset();
       setState(() {
         _currentIndex--;
+      });
+      _animController.forward();
+    } else if (!_showIntro) {
+      // 첫 번째 질문에서 뒤로가면 인트로로
+      _animController.reset();
+      setState(() {
+        _showIntro = true;
       });
       _animController.forward();
     }
@@ -103,122 +121,249 @@ class _SurveyScreenState extends State<SurveyScreen>
 
   @override
   Widget build(BuildContext context) {
-    final question = SurveyData.questions[_currentIndex];
-    final progress = (_currentIndex + 1) / 9;
-
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFF0F4FF), Color(0xFFE8EEFF)],
+    return PopScope(
+      canPop: widget.isRetake && _showIntro,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (!_showIntro) {
+          _goBack();
+        }
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFF0F4FF), Color(0xFFE8EEFF)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-
-                // 상단 바: 뒤로가기 + 진행률
-                Row(
-                  children: [
-                    // 뒤로가기
-                    if (_currentIndex > 0)
-                      GestureDetector(
-                        onTap: _goBack,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(180),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: AppColors.textPrimary,
-                            size: 20,
-                          ),
-                        ),
-                      )
-                    else
-                      const SizedBox(width: 36),
-                    const Spacer(),
-                    // 진행 카운터
-                    Text(
-                      '${_currentIndex + 1} / 9',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 12),
-
-                // 프로그레스 바
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 4,
-                    backgroundColor: AppColors.primary.withAlpha(30),
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                ),
-
-                // 질문 영역
-                Expanded(
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Center(
-                        child: Text(
-                          question.question,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                            height: 1.5,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 선택지 버튼들
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    children: [
-                      _buildOptionButton(
-                        label: question.optionA,
-                        isSelected: _answers[_currentIndex] == 0,
-                        onTap: () => _selectAnswer(0),
-                      ),
-                      const SizedBox(height: 14),
-                      _buildOptionButton(
-                        label: question.optionB,
-                        isSelected: _answers[_currentIndex] == 1,
-                        onTap: () => _selectAnswer(1),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 48),
-              ],
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _showIntro ? _buildIntroPage() : _buildQuestionPage(),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// 인트로 안내 페이지
+  Widget _buildIntroPage() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+
+          // 뒤로가기 (재설문 시에만)
+          if (widget.isRetake)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(180),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: AppColors.textPrimary,
+                    size: 20,
+                  ),
+                ),
+              ),
+            )
+          else
+            const SizedBox(height: 36),
+
+          const Spacer(flex: 2),
+
+          // 이모지
+          const Text('🎵', style: TextStyle(fontSize: 64)),
+          const SizedBox(height: 24),
+
+          // 타이틀
+          const Text(
+            '음악 성향 테스트',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 설명
+          Text(
+            '간단한 9개 질문으로\n당신의 음악 취향을 분석해요.\n\n결과에 따라 감정별 음악 추천이\n당신의 스타일에 맞게 바뀝니다.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              color: AppColors.textSecondary,
+              height: 1.7,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 소요 시간
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withAlpha(15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '⏱ 약 1분 소요',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+
+          const Spacer(flex: 3),
+
+          // 시작 버튼
+          GestureDetector(
+            onTap: _startSurvey,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withAlpha(60),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Text(
+                '시작하기',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  /// 질문 페이지
+  Widget _buildQuestionPage() {
+    final question = SurveyData.questions[_currentIndex];
+    final progress = (_currentIndex + 1) / 9;
+
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+
+        // 상단 바: 뒤로가기 + 진행률
+        Row(
+          children: [
+            // 뒤로가기 (항상 표시)
+            GestureDetector(
+              onTap: _goBack,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(180),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+            const Spacer(),
+            // 진행 카운터
+            Text(
+              '${_currentIndex + 1} / 9',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        // 프로그레스 바
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 4,
+            backgroundColor: AppColors.primary.withAlpha(30),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          ),
+        ),
+
+        // 질문 영역
+        Expanded(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Center(
+                child: Text(
+                  question.question,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                    height: 1.5,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // 선택지 버튼들
+        FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            children: [
+              _buildOptionButton(
+                label: question.optionA,
+                isSelected: _answers[_currentIndex] == 0,
+                onTap: () => _selectAnswer(0),
+              ),
+              const SizedBox(height: 14),
+              _buildOptionButton(
+                label: question.optionB,
+                isSelected: _answers[_currentIndex] == 1,
+                onTap: () => _selectAnswer(1),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 48),
+      ],
     );
   }
 
