@@ -159,7 +159,7 @@ class SettingsScreen extends StatelessWidget {
                     Divider(
                       height: 1,
                       indent: 60,
-                      color: Colors.grey.withAlpha(30),
+                      color: AppColors.accent.withAlpha(30),
                     ),
                     _SettingsTile(
                       icon: Icons.notifications_active_rounded,

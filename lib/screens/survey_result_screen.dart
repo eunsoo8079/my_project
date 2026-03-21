@@ -82,7 +82,7 @@ class _SurveyResultScreenState extends State<SurveyResultScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFF0F4FF), Color(0xFFE8EEFF)],
+            colors: [AppColors.background, AppColors.background],
           ),
         ),
         child: SafeArea(
@@ -234,7 +234,7 @@ class _SurveyResultScreenState extends State<SurveyResultScreen>
                         '시작하기',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.primaryDark,
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),

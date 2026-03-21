@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/emotion_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/mini_music_player.dart';
+import '../widgets/insight_card.dart';
+import '../services/insight_service.dart';
 import 'record_screen.dart';
 import 'calendar_screen.dart';
 import 'statistics_screen.dart';
@@ -41,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withAlpha(15),
+                  color: AppColors.textPrimary.withAlpha(15),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -53,8 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.transparent,
               elevation: 0,
-              selectedItemColor: AppColors.primary,
-              unselectedItemColor: AppColors.textSecondary,
+              selectedItemColor: AppColors.primaryDark,
+              unselectedItemColor: AppColors.accent.withAlpha(150),
               selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: '홈'),
@@ -208,7 +210,7 @@ class _HomeTab extends StatelessWidget {
                         child: const Icon(
                           Icons.edit_note_rounded,
                           size: 60,
-                          color: Colors.white,
+                          color: AppColors.primaryDark,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -248,14 +250,14 @@ class _HomeTab extends StatelessWidget {
                         todayRecord != null
                             ? Icons.edit_rounded
                             : Icons.add_rounded,
-                        color: Colors.white,
+                        color: AppColors.primaryDark,
                         size: 24,
                       ),
                       const SizedBox(width: 10),
                       Text(
                         todayRecord != null ? '오늘 기록 수정하기' : '오늘 기분 기록하기',
                         style: AppTextStyles.button.copyWith(
-                          color: Colors.white,
+                          color: AppColors.primaryDark,
                         ),
                       ),
                     ],
@@ -272,6 +274,15 @@ class _HomeTab extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               _buildWeeklyPreview(emotionProvider),
+
+              const SizedBox(height: 32),
+
+              // 주간 인사이트
+              InsightSection(
+                insights: InsightService.generateWeeklyInsights(
+                  emotionProvider.records,
+                ),
+              ),
             ],
           ),
         ),
@@ -318,7 +329,7 @@ class _HomeTab extends StatelessWidget {
                       ? AppColors.emotionColors[record.emotionType]?.withAlpha(
                           30,
                         )
-                      : Colors.grey.withAlpha(20),
+                      : AppColors.accent.withAlpha(20),
                   shape: BoxShape.circle,
                   border: isToday
                       ? Border.all(color: AppColors.primary, width: 2)

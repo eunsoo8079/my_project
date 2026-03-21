@@ -135,7 +135,7 @@ class _SurveyScreenState extends State<SurveyScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFF0F4FF), Color(0xFFE8EEFF)],
+              colors: [AppColors.background, AppColors.background],
             ),
           ),
           child: SafeArea(
@@ -223,7 +223,7 @@ class _SurveyScreenState extends State<SurveyScreen>
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: AppColors.accent,
               ),
             ),
           ),
@@ -251,7 +251,7 @@ class _SurveyScreenState extends State<SurveyScreen>
                 '시작하기',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.primaryDark,
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -391,7 +391,7 @@ class _SurveyScreenState extends State<SurveyScreen>
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withAlpha(20),
+                    color: AppColors.textPrimary.withAlpha(20),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),

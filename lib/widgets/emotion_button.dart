@@ -68,7 +68,7 @@ class _EmotionButtonState extends State<EmotionButton>
             border: Border.all(
               color: widget.isSelected
                   ? emotionColor
-                  : Colors.grey.withAlpha(50),
+                  : AppColors.accent.withAlpha(50),
               width: widget.isSelected ? 3 : 1,
             ),
             boxShadow: widget.isSelected
@@ -81,7 +81,7 @@ class _EmotionButtonState extends State<EmotionButton>
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withAlpha(10),
+                      color: AppColors.textPrimary.withAlpha(10),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

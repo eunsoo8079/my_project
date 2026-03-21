@@ -5,6 +5,7 @@ import '../providers/emotion_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/emotion_button.dart';
 import '../widgets/emotion_slider.dart';
+import '../widgets/tag_selector.dart';
 import '../services/music_service.dart';
 import '../theme/app_theme.dart';
 
@@ -24,6 +25,7 @@ class _RecordScreenState extends State<RecordScreen> {
   double _intensity = 50;
   bool _isSaving = false;
   late DateTime _selectedDate;
+  List<String> _selectedTags = [];
 
   final List<String> _emotions = ['😊', '😢', '😡', '😌', '😰', '😑', '🤔'];
 
@@ -37,6 +39,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _intensity = widget.existingRecord!.emotionIntensity.toDouble();
       _contentController.text = widget.existingRecord!.content ?? '';
       _selectedDate = widget.existingRecord!.date;
+      _selectedTags = widget.existingRecord!.tagList;
     } else {
       _selectedDate = widget.initialDate ?? DateTime.now();
     }
@@ -78,6 +81,7 @@ class _RecordScreenState extends State<RecordScreen> {
           content: _contentController.text.trim().isEmpty
               ? null
               : _contentController.text.trim(),
+          tags: _selectedTags.isEmpty ? null : _selectedTags.join(','),
           createdAt: widget.existingRecord!.createdAt,
         );
         await context.read<EmotionProvider>().updateRecord(updatedRecord);
@@ -91,6 +95,7 @@ class _RecordScreenState extends State<RecordScreen> {
           content: _contentController.text.trim().isEmpty
               ? null
               : _contentController.text.trim(),
+          tags: _selectedTags.isEmpty ? null : _selectedTags.join(','),
           createdAt: now,
         );
         await context.read<EmotionProvider>().addRecord(record);
@@ -144,27 +149,185 @@ class _RecordScreenState extends State<RecordScreen> {
   }
 
   Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
+    if (isEditMode) return;
+
+    int tempYear = _selectedDate.year;
+    int tempMonth = _selectedDate.month;
+    int tempDay = _selectedDate.day;
+    final now = DateTime.now();
+
+    await showModalBottomSheet(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-            ),
-          ),
-          child: child!,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final daysInMonth = DateTime(tempYear, tempMonth + 1, 0).day;
+            if (tempDay > daysInMonth) tempDay = daysInMonth;
+
+            return SizedBox(
+              height: 320,
+              child: Column(
+                children: [
+                  // 헤더
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            '취소',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '날짜 선택',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedDate = DateTime(tempYear, tempMonth, tempDay);
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            '확인',
+                            style: TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+
+                  // 연/월/일 스크롤 휠
+                  Expanded(
+                    child: Row(
+                      children: [
+                        // 연도
+                        Expanded(
+                          child: ListWheelScrollView.useDelegate(
+                            itemExtent: 42,
+                            controller: FixedExtentScrollController(
+                              initialItem: tempYear - 2020,
+                            ),
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setModalState(() => tempYear = 2020 + index);
+                            },
+                            childDelegate: ListWheelChildBuilderDelegate(
+                              builder: (context, index) {
+                                final year = 2020 + index;
+                                if (year > now.year) return null;
+                                final isSelected = year == tempYear;
+                                return Center(
+                                  child: Text(
+                                    '${year}년',
+                                    style: TextStyle(
+                                      fontSize: isSelected ? 18 : 15,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                );
+                              },
+                              childCount: now.year - 2020 + 1,
+                            ),
+                          ),
+                        ),
+                        // 월
+                        Expanded(
+                          child: ListWheelScrollView.useDelegate(
+                            itemExtent: 42,
+                            controller: FixedExtentScrollController(
+                              initialItem: tempMonth - 1,
+                            ),
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setModalState(() => tempMonth = index + 1);
+                            },
+                            childDelegate: ListWheelChildBuilderDelegate(
+                              builder: (context, index) {
+                                final month = index + 1;
+                                final isSelected = month == tempMonth;
+                                return Center(
+                                  child: Text(
+                                    '${month}월',
+                                    style: TextStyle(
+                                      fontSize: isSelected ? 18 : 15,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                );
+                              },
+                              childCount: 12,
+                            ),
+                          ),
+                        ),
+                        // 일
+                        Expanded(
+                          child: ListWheelScrollView.useDelegate(
+                            itemExtent: 42,
+                            controller: FixedExtentScrollController(
+                              initialItem: tempDay - 1,
+                            ),
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setModalState(() => tempDay = index + 1);
+                            },
+                            childDelegate: ListWheelChildBuilderDelegate(
+                              builder: (context, index) {
+                                final day = index + 1;
+                                final isSelected = day == tempDay;
+                                return Center(
+                                  child: Text(
+                                    '${day}일',
+                                    style: TextStyle(
+                                      fontSize: isSelected ? 18 : 15,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected
+                                          ? AppColors.textPrimary
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                );
+                              },
+                              childCount: daysInMonth,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() => _selectedDate = picked);
-    }
   }
 
   @override
@@ -201,7 +364,7 @@ class _RecordScreenState extends State<RecordScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(10),
+                                color: AppColors.textPrimary.withAlpha(10),
                                 blurRadius: 8,
                               ),
                             ],
@@ -381,7 +544,7 @@ class _RecordScreenState extends State<RecordScreen> {
                                           ? emotionColor
                                           : _selectedEmotion != null
                                               ? AppColors.primary
-                                              : Colors.grey.withAlpha(50),
+                                              : AppColors.accent.withAlpha(50),
                                       width: 2,
                                     ),
                                   ),
@@ -426,6 +589,15 @@ class _RecordScreenState extends State<RecordScreen> {
 
                           const SizedBox(height: 24),
 
+                          // 태그 선택
+                          TagSelector(
+                            selectedTags: _selectedTags,
+                            onChanged: (tags) =>
+                                setState(() => _selectedTags = tags),
+                          ),
+
+                          const SizedBox(height: 24),
+
                           // 내용 입력
                           Text(
                             '오늘 있었던 일',
@@ -447,7 +619,7 @@ class _RecordScreenState extends State<RecordScreen> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withAlpha(8),
+                                  color: AppColors.textPrimary.withAlpha(8),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -490,13 +662,13 @@ class _RecordScreenState extends State<RecordScreen> {
                                     isEditMode
                                         ? Icons.check_rounded
                                         : Icons.save_rounded,
-                                    color: Colors.white,
+                                    color: AppColors.primaryDark,
                                   ),
                                   const SizedBox(width: 10),
                                   Text(
                                     isEditMode ? '수정 완료' : '저장하기',
                                     style: AppTextStyles.button.copyWith(
-                                      color: Colors.white,
+                                      color: AppColors.primaryDark,
                                     ),
                                   ),
                                 ],

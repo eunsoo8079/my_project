@@ -4,6 +4,8 @@ import 'package:table_calendar/table_calendar.dart';
 import '../providers/emotion_provider.dart';
 import '../models/emotion_record.dart';
 import '../theme/app_theme.dart';
+import '../services/insight_service.dart';
+import '../widgets/insight_card.dart';
 import 'record_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -16,6 +18,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  int _selectedTab = 0; // 0: 일별 기록, 1: 주간 인사이트
 
   @override
   Widget build(BuildContext context) {
@@ -172,13 +175,135 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // 선택된 날짜의 기록
-            if (_selectedDay != null)
-              Expanded(
-                child: _buildRecordDetail(emotionProvider, _selectedDay!),
+            // 탭 토글
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withAlpha(20),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedTab = 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedTab == 0
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(11),
+                            boxShadow: _selectedTab == 0
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.textPrimary.withAlpha(10),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '📅',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '일별 기록',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: _selectedTab == 0
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: _selectedTab == 0
+                                      ? AppColors.textPrimary
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedTab = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedTab == 1
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(11),
+                            boxShadow: _selectedTab == 1
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.textPrimary.withAlpha(10),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '💡',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '주간 인사이트',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: _selectedTab == 1
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: _selectedTab == 1
+                                      ? AppColors.textPrimary
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // 탭 콘텐츠
+            Expanded(
+              child: _selectedTab == 0
+                  ? (_selectedDay != null
+                      ? SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildRecordDetail(emotionProvider, _selectedDay!),
+                        )
+                      : Center(
+                          child: Text(
+                            '날짜를 선택해주세요',
+                            style: AppTextStyles.subtitle,
+                          ),
+                        ))
+                  : _buildWeeklyInsight(
+                      _selectedDay ?? _focusedDay,
+                      emotionProvider.records,
+                    ),
+            ),
           ],
         ),
       ),
@@ -196,55 +321,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     if (record == null) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 24),
-        padding: const EdgeInsets.all(32),
-        decoration: AppDecorations.cardDecoration,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.event_busy_rounded,
-              size: 48,
-              color: AppColors.textSecondary.withAlpha(100),
-            ),
-            const SizedBox(height: 12),
-            Text('이 날은 기록이 없습니다', style: AppTextStyles.subtitle),
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        RecordScreen(initialDate: selectedDay),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                decoration: AppDecorations.primaryButtonDecoration,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.add_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '기록하기',
-                      style: AppTextStyles.button.copyWith(color: Colors.white),
-                    ),
-                  ],
-                ),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    RecordScreen(initialDate: selectedDay),
               ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: AppDecorations.cardDecoration,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.event_busy_rounded,
+                  size: 28,
+                  color: AppColors.textSecondary.withAlpha(120),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '이 날은 기록이 없어요',
+                    style: AppTextStyles.subtitle.copyWith(fontSize: 15),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: AppDecorations.primaryButtonDecoration,
+                  child: Text(
+                    '+ 기록하기',
+                    style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
@@ -252,7 +375,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final emotionColor =
         AppColors.emotionColors[record.emotionType] ?? AppColors.primary;
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
         decoration: AppDecorations.cardDecoration,
@@ -401,6 +524,104 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklyInsight(
+    DateTime selectedDay,
+    List<EmotionRecord> allRecords,
+  ) {
+    final weekStart = selectedDay.subtract(
+      Duration(days: selectedDay.weekday - 1),
+    );
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    final insights = InsightService.generateWeeklyInsights(
+      allRecords,
+      referenceDate: selectedDay,
+    );
+
+    if (insights.isEmpty) return const SizedBox.shrink();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.textPrimary.withAlpha(10),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, size: 20, color: AppColors.accent),
+                const SizedBox(width: 8),
+                Text(
+                  '${weekStart.month}/${weekStart.day} ~ ${weekEnd.month}/${weekEnd.day} 인사이트',
+                  style: AppTextStyles.headline2.copyWith(fontSize: 17),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (insights.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: Text(
+                    '이 주의 기록이 부족해요.\n기록이 쌓이면 인사이트를 볼 수 있어요!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.6,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...insights.map((i) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withAlpha(10),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border(
+                    left: BorderSide(
+                      color: AppColors.accent.withAlpha(80),
+                      width: 3,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(i.icon, style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        i.text,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+          ],
         ),
       ),
     );

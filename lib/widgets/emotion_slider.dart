@@ -12,7 +12,7 @@ class EmotionSlider extends StatelessWidget {
   });
 
   Color _getColor() {
-    if (value < 25) return const Color(0xFF4CAF50); // 초록 - 약함
+    if (value < 25) return AppColors.accent; // 초록 - 약함
     if (value < 50) return const Color(0xFFFFC107); // 노랑 - 보통
     if (value < 75) return const Color(0xFFFF9800); // 주황 - 강함
     return const Color(0xFFE53935); // 빨강 - 매우 강함

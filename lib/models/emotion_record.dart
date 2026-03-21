@@ -6,6 +6,7 @@ class EmotionRecord {
   final int emotionIntensity; // 1-100
   final String? content;
   final String? musicUrl;
+  final String? tags; // 쉼표 구분 태그 (예: "직장,운동")
   final DateTime createdAt;
 
   EmotionRecord({
@@ -16,8 +17,13 @@ class EmotionRecord {
     required this.emotionIntensity,
     this.content,
     this.musicUrl,
+    this.tags,
     required this.createdAt,
   });
+
+  // 태그 목록으로 변환
+  List<String> get tagList =>
+      tags?.split(',').where((t) => t.isNotEmpty).toList() ?? [];
 
   // DB에 저장할 Map으로 변환
   Map<String, dynamic> toMap() {
@@ -29,6 +35,7 @@ class EmotionRecord {
       'emotion_intensity': emotionIntensity,
       'content': content,
       'music_url': musicUrl,
+      'tags': tags,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -43,6 +50,7 @@ class EmotionRecord {
       emotionIntensity: map['emotion_intensity'] as int,
       content: map['content'] as String?,
       musicUrl: map['music_url'] as String?,
+      tags: map['tags'] as String?,
       createdAt: DateTime.parse(map['created_at']),
     );
   }

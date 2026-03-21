@@ -18,7 +18,12 @@ class DatabaseService {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _upgradeDB,
+    );
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -32,6 +37,7 @@ class DatabaseService {
         emotion_intensity INTEGER NOT NULL,
         content TEXT,
         music_url TEXT,
+        tags TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -46,6 +52,14 @@ class DatabaseService {
 
     // 인덱스 생성 (성능 향상)
     await db.execute('CREATE INDEX idx_date ON emotions(date)');
+    await db.execute('CREATE INDEX idx_tags ON emotions(tags)');
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE emotions ADD COLUMN tags TEXT');
+      await db.execute('CREATE INDEX idx_tags ON emotions(tags)');
+    }
   }
 
   // 기록 추가

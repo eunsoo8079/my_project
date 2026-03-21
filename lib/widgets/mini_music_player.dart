@@ -14,6 +14,9 @@ class MiniMusicPlayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final music = context.watch<MusicService>();
     final hasMusic = music.hasActiveSession;
+
+    // 음악 재생 중이 아니면 바를 숨김
+    if (!hasMusic) return const SizedBox.shrink();
     final emotionColor = hasMusic
         ? (AppColors.emotionColors[music.currentEmotion] ?? AppColors.primary)
         : AppColors.primary;
@@ -30,7 +33,7 @@ class MiniMusicPlayer extends StatelessWidget {
           top: BorderSide(
             color: hasMusic
                 ? emotionColor.withAlpha(40)
-                : Colors.grey.withAlpha(20),
+                : AppColors.accent.withAlpha(20),
             width: 1,
           ),
         ),
@@ -51,7 +54,7 @@ class MiniMusicPlayer extends StatelessWidget {
           else
             SizedBox(
               height: 3,
-              child: Container(color: Colors.grey.withAlpha(15)),
+              child: Container(color: AppColors.accent.withAlpha(15)),
             ),
 
           // 컨트롤 영역
